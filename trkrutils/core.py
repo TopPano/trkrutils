@@ -1,8 +1,20 @@
+import abc
 import cv2
+from .consts import DEFAULT_GT_COLOR
 
 DEFAULT_WITH_GT = True
-DEFAULT_GT_COLOR = (255, 255, 255)
 DEFAULT_FPTS = 20
+
+class Tracker:
+    @abc.abstractmethod
+    def load_first_frame(self, img, gt):
+        '''Load first frame and ground truth location
+        of tracked object in video'''
+
+    @abc.abstractmethod
+    def estimate(self, img):
+        '''Given an image and return the estimated
+        location of tracked object'''
 
 class BoundingBox:
     # Init function
@@ -11,14 +23,30 @@ class BoundingBox:
 
     # Setter
     def set(self, x1, y1, x2, y2):
-        self.x1 = x1
-        self.y1 = y1
-        self.x2 = x2
-        self.y2 = y2
+        self.x1 = min(x1, x2)
+        self.y1 = min(y1, y2)
+        self.x2 = max(x1, x2)
+        self.y2 = max(y1, y2)
 
     # Draw bouding box on an image
     def draw(self, img, color):
         cv2.rectangle(img, (self.x1, self.y1), (self.x2, self.y2), color, 3)
+
+    # Compute the width of the bounding box
+    def width(self):
+        return self.x2 - self.x1
+
+    # Compute the height of the bounding box
+    def height(self):
+        return self.y2 - self.y1
+
+    # Compute the area of the bounding box
+    def area(self):
+        return self.width() * self.height()
+
+    # Compute the intersection area between this and another bounding box
+    def intersection(self, bbox):
+        return max(0.0, min(self.x2, bbox.x2) - max(self.x1, bbox.x1)) * max(0.0, min(self.y2, bbox.y2) - max(self.y1, bbox.y1))
 
 class Frame:
     # Init function
@@ -27,12 +55,16 @@ class Frame:
         self.gt = BoundingBox(x1, y1, x2, y2)
 
     # Get the frame with/without drawn groud truth
-    def get(self, with_gt = DEFAULT_WITH_GT, gt_color = DEFAULT_GT_COLOR):
+    def get_img(self, with_gt = DEFAULT_WITH_GT, gt_color = DEFAULT_GT_COLOR):
         if with_gt:
             self.gt.draw(self.img, gt_color)
             return self.img
         else:
             return self.img
+
+    # Get the ground truth
+    def get_gt(self):
+        return self.gt
 
 class Video:
     # Init function
@@ -41,19 +73,23 @@ class Video:
         self.name = name
         self.path = path
 
+    # Show an image
+    def show_img(self, img, period):
+        window_name = '{}/{}'.format(self.dataset_name, self.name)
+        cv2.imshow(window_name, img)
+        cv2.waitKey(period)
+
     # Load frames from disk
     def load_frames(self):
         return []
 
     # Show the video
     def show(self, with_gt = DEFAULT_WITH_GT, gt_color = DEFAULT_GT_COLOR, fps = DEFAULT_FPTS):
-        window_name = '{}/{}'.format(self.dataset_name, self.name)
         # The period (in milliseconds) to show a frame
         frame_period = 1000 / fps
         # Load and show video frame by frame
         for frame in self.load_frames():
-            cv2.imshow(window_name, frame.get(with_gt, gt_color))
-            cv2.waitKey(frame_period)
+            self.show_img(frame.get_img(with_gt, gt_color), frame_period)
 
 class Dataset:
     # Init function
@@ -81,3 +117,25 @@ class Dataset:
     def show_videos(self, with_gt = DEFAULT_WITH_GT, gt_color = DEFAULT_GT_COLOR, fps = DEFAULT_FPTS):
         for video in self.videos:
             video.show(with_gt, gt_color, fps)
+
+class Score:
+    # Init function
+    def __init__(self, target_name, results = None):
+        self.target_name = target_name
+        self.results = dict() if results is None else results
+
+    # Insert value of a tracker and metric
+    def insert(self, tracker_name, metric_name, metric_value):
+        if metric_name not in self.results:
+            self.results[metric_name] = dict()
+        self.results[metric_name][tracker_name] = metric_value
+
+    # Get value of a specified tracker and metric
+    def get_val(self, tracker_name, metric_name):
+        if metric_name in self.results and tracker_name in self.results[metric_name]:
+            return self.results[metric_name][tracker_name]
+        return None
+
+    # Get list of all metrics names
+    def get_metrics(self):
+        return self.results.iterkeys()

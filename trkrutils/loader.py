@@ -1,7 +1,9 @@
 import os
 import cv2
 
+import downloader
 from .core import Frame, Video, Dataset
+from .consts import DEFAULT_DOWNLOAD_VERBOSE
 
 DATASET_LIST = [
     'otb_v1.0'
@@ -38,20 +40,21 @@ class OTBVideo(Video):
 
         return frames
 
-def load(dataset_name, path):
+def load(dataset_name, path = None, verbose = DEFAULT_DOWNLOAD_VERBOSE):
     assert dataset_name in DATASET_LIST, 'Dataset "{}" is not supported'.format(dataset_name)
+
+    dataset_path = downloader.download(dataset_name, verbose = verbose) if path is None else path
 
     video_class = Video
     videos_info = []
 
     if dataset_name.startswith('otb'):
         video_class = OTBVideo
-        for video_name in os.listdir(path):
-            video_path = os.path.join(path, video_name)
-            # The "Jogging" video is for multiple objects tracking, not support in our module
-            if os.path.isdir(video_path) and video_name != 'Jogging':
+        for video_name in os.listdir(dataset_path):
+            video_path = os.path.join(dataset_path, video_name)
+            if os.path.isdir(video_path):
                 videos_info.append((video_name, video_path))
 
     videos = [video_class(dataset_name, info[0], info[1]) for info in videos_info]
 
-    return Dataset(dataset_name, path, videos)
+    return Dataset(dataset_name, dataset_path, videos)

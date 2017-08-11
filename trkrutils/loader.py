@@ -2,8 +2,8 @@ import os
 import cv2
 
 import downloader
-from .core import Frame, Video, Dataset
-from .consts import DEFAULT_DOWNLOAD_VERBOSE
+from trkrutils.core import Frame, Video, Dataset
+from trkrutils.consts import DEFAULT_DOWNLOAD_VERBOSE
 
 DATASET_LIST = [
     'otb_v1.0'

@@ -1,6 +1,6 @@
 import abc
 import cv2
-from .consts import DEFAULT_GT_COLOR
+from trkrutils.consts import DEFAULT_GT_COLOR
 
 DEFAULT_WITH_GT = True
 DEFAULT_FPTS = 20

@@ -2,8 +2,8 @@ import os
 import urllib
 import wget
 import zipfile
-from .config import datasets as DATASETS
-from .consts import DEFAULT_DOWNLOAD_VERBOSE, DEFAULT_DOWNLOAD_PATH
+from trkrutils.config import datasets as DATASETS
+from trkrutils.consts import DEFAULT_DOWNLOAD_VERBOSE, DEFAULT_DOWNLOAD_PATH
 
 DONE_FILE_NAME = '.done'
 

@@ -1,6 +1,5 @@
-from .consts import DEFAULT_ESTIMATED_COLOR, DEFAULT_GT_COLOR
-from .core import Score
-from .plot import success_plot
+from trkrutils.consts import DEFAULT_ESTIMATED_COLOR, DEFAULT_GT_COLOR
+from trkrutils.core import Score
 
 DEFAULT_VISUALIZED = False
 DEFAULT_WAIT_PREIOD = 1

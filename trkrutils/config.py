@@ -9,5 +9,17 @@ datasets = {
             'Matrix', 'Mhyang', 'MotorRolling', 'MountainBike', 'Shaking', 'Singer1', 'Singer2', 'Skating1', 'Skiing', 'Soccer',
             'Subway', 'Suv', 'Sylvester', 'Tiger1', 'Tiger2', 'Trellis', 'Walking', 'Walking2', 'Woman'
         ]
+    },
+    'vot2013': {
+        'url': 'http://data.votchallenge.net/vot2013/vot2013.zip'
+    },
+    'vot2014': {
+        'url': 'http://data.votchallenge.net/vot2014/vot2014.zip'
+    },
+    'vot2015': {
+        'url': 'http://data.votchallenge.net/vot2015/vot2015.zip'
+    },
+    'vot2016': {
+        'url': 'http://data.votchallenge.net/vot2016/vot2016.zip'
     }
 }

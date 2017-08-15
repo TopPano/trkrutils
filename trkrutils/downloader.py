@@ -49,7 +49,7 @@ def download(dataset_name, root_path = DEFAULT_DOWNLOAD_PATH, verbose = DEFAULT_
 
     dataset_path = os.path.join(root_path, dataset_name)
 
-    if dataset_name == 'otb_v1.0':
+    if dataset_name.startswith('otb'):
         url_prefix = DATASETS[dataset_name]['url_prefix']
         videos = DATASETS[dataset_name]['videos']
         for video in videos:
@@ -60,5 +60,12 @@ def download(dataset_name, root_path = DEFAULT_DOWNLOAD_PATH, verbose = DEFAULT_
                 _download_url(url, zip_name, verbose)
                 _unzip_file(zip_name, dataset_path)
                 _mark_downloaded(video_dir)
+    elif dataset_name.startswith('vot'):
+        url = DATASETS[dataset_name]['url']
+        zip_name = '{}/{}.zip'.format(dataset_path, dataset_name)
+        if not _is_downloaded(dataset_path):
+            _download_url(url, dataset_path, verbose)
+            _unzip_file(zip_name, dataset_path)
+            _mark_downloaded(dataset_path)
 
     return dataset_path

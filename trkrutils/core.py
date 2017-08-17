@@ -7,8 +7,8 @@ DEFAULT_FPTS = 20
 
 class Tracker:
     @abc.abstractmethod
-    def load_first_frame(self, img, gt):
-        '''Load first frame and ground truth location
+    def init_frame(self, img, gt):
+        '''Load initialized frame and ground truth location
         of tracked object in video'''
 
     @abc.abstractmethod
@@ -16,7 +16,47 @@ class Tracker:
         '''Given an image and return the estimated
         location of tracked object'''
 
-class BoundingBox:
+class Region:
+    @abc.abstractmethod
+    def area(self):
+        '''Compute the area of the bounding box'''
+
+    @abc.abstractmethod
+    def intersection(self, region):
+        '''Compute the intersection area between
+        this and another region'''
+
+    # Compute the union area with this and another region
+    def union(self, region):
+        return self.area() + region.area() - self.intersection(region)
+
+    def overlap_ratio(self, region):
+        intersection_area = float(self.intersection(region))
+        union_area = float(self.union(region))
+        if union_area <= 0:
+            return 0
+        else:
+            return intersection_area / union_area
+
+class SpecialRegion(Region):
+    # The codes for special region
+    UNDEFINED = 0
+    INIT = 1
+    FAILURE = 2
+
+    # Init function
+    def __init__(self, code):
+        self.code = code
+
+    # The area of special region is always 0
+    def area(self):
+        return 0
+
+    # The intersection  area of special regions is always 0
+    def intersection(self, special_region):
+        return 0
+
+class BoundingBox(Region):
     # Init function
     def __init__(self, x1, y1, x2, y2):
         self.set(x1, y1, x2, y2)

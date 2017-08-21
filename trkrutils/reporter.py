@@ -1,4 +1,5 @@
-import matplotlib.pyplot as plt
+import matplotlib.pyplot as plt, mpld3
+from trkrutils import webapp
 
 DEFAULT_SHOW = True
 DEFAULT_SAVE = False
@@ -29,6 +30,10 @@ def _ar_plot(score):
     for tracker_name, values in result.iteritems():
         plt.scatter(x = values['reliability'], y = values['accuracy'], label = '{}'.format(tracker_name))
 
+    # TODO:
+    # For mpld3, the markers for plt.scatter do not appear in legends. We should find
+    # out how to fix the bug.
+    # mpld3 missing features: https://github.com/mpld3/mpld3/wiki#mpld3-missing-features
     plt.legend(loc = 'upper left')
 
     return fig, filename
@@ -59,8 +64,12 @@ def _success_plot(score):
 
     return fig, filename
 
-def plot(scores, show = DEFAULT_SHOW, save = DEFAULT_SAVE):
+def report(scores, show = DEFAULT_SHOW, save = DEFAULT_SAVE):
+    data_list = []
+
     for score in scores:
+        html_plots = []
+
         for metric_name in score.get_metrics():
             if metric_name == 'success_plot':
                 fig, filename = _success_plot(score)
@@ -73,10 +82,19 @@ def plot(scores, show = DEFAULT_SHOW, save = DEFAULT_SAVE):
             if save:
                 plt.savefig(filename)
 
-            # Show the plot
+            # Append the data for showing
             if show:
-                print 'Press ctrl + w or cmd + w to continue'
-                plt.show()
+                html_plots.append(mpld3.fig_to_html(fig))
 
             # Close the plot figure
             plt.close(fig)
+
+        if show:
+            data_list.append({
+                'name': score.target_name,
+                'type': score.target_type,
+                'html_plots': html_plots
+            })
+
+    if show:
+        webapp.run(data_list)

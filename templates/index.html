@@ -1,0 +1,39 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>Evaluation Results</title>
+    <meta name="description" content="Evaluation result for trkrutils">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel='stylesheet' type='text/css' href='/static/bootstrap.min.css'>
+    <link rel='stylesheet' type='text/css' href='/static/styles.css'>
+    <script src="/static/jquery.min.js"></script>
+    <script src="/static/webapp.js"></script>
+  </head>
+  <body>
+    <div id="main">
+      <h1>Evaluation Results</h1>
+      <table id="table" class="table table-hover table-mc-light-blue">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Type</th>
+            <th>Result</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for data in data_list %}
+          <tr>
+            <td data-title="Name">{{ data['name'] }}</td>
+            <td data-title="Type">{{ data['type'] }}</td>
+            <td data-title="Result">
+              <a href="result/{{ data['name'] }}">see result</a>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </body>
+</html>

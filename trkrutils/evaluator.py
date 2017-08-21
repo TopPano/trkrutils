@@ -116,7 +116,7 @@ def eval_video(
     gt_color = DEFAULT_GT_COLOR,
     estimated_color = DEFAULT_ESTIMATED_COLOR,
     wait_preiod = DEFAULT_WAIT_PREIOD):
-    score = Score(video.name)
+    score = Score(video.name, 'video')
     repetitions = DEFAULT_STOCHASTIC_REPETITIONS if stochastic else DEFAULT_DETERMINISTIC_REPETITIONS
     experiments = [
         # Experiment for success_plot
@@ -179,7 +179,7 @@ def eval_dataset(
         score = eval_video(trackers, video, metrics, stochastic, visualized, gt_color, estimated_color, wait_preiod)
         scores.extend(score)
 
-    overall_score = Score(dataset.name)
+    overall_score = Score(dataset.name, 'dataset')
     for metric in metrics:
         for tracker in trackers:
             tracker_name = tracker.__class__.__name__

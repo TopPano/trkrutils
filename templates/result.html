@@ -1,0 +1,64 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="x-ua-compatible" content="ie=edge">
+    <title>{{ data['name'] }}</title>
+    <meta name="description" content="Evaluation result for trkrutils">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel='stylesheet' type='text/css' href='/static/bootstrap.min.css'>
+    <link rel='stylesheet' type='text/css' href='/static/styles.css'>
+    <script src="/static/jquery.min.js"></script>
+    <script src="/static/webapp.js"></script>
+    <style>
+      .plot-right {
+        float: right;
+      }
+      .plot-left {
+        float: left;
+      }
+      @media (max-width: 1199px) {
+        .plot-right, .plot-left {
+          float: none;
+          transform: translateX(50%);
+          margin-left: -640px;
+        }
+      }
+      .plot-center {
+        float: none;
+        transform: translateX(50%);
+        margin-left: -640px;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="main">
+      <h1>Result of {{ data['name'] }}</h1>
+
+      {% if data['html_plots']|length > 1 %}
+      <div class="container-fluid">
+        {% for html_plot in data['html_plots'] %}
+        {% if loop.index % 2 == 1 %}
+          <div class="row">
+          {% set col_class = 'plot-right' %}
+        {% else %}
+          {% set col_class = 'plot-left' %}
+        {% endif %}
+            <div class="col-lg-6">
+              <div class="{{ col_class }}">
+              {{ html_plot|safe }}
+              </div>
+            </div>
+        {% if loop.index % 2 == 0 or loop.index == data['html_plots']|length %}
+          </div>
+        {% endif %}
+        {% endfor %}
+      </div>
+      {% else %}
+        <div class="plot-center">
+          {{ data['html_plots'][0]|safe }}
+        </div>
+      {% endif %}
+    </div>
+  </body>
+</html>

@@ -160,8 +160,9 @@ class Dataset:
 
 class Score:
     # Init function
-    def __init__(self, target_name, results = None):
+    def __init__(self, target_name, target_type, results = None):
         self.target_name = target_name
+        self.target_type = target_type
         self.results = dict() if results is None else results
 
     # Insert value of a tracker and metric

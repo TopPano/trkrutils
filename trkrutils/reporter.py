@@ -59,7 +59,7 @@ def _success_plot(score):
 
     # Fill the score for each tracker
     for tracker_name, values in result.iteritems():
-        plt.plot(values['success_rates'], values['thresholds'], label = '{} [ {:.3f} ]'.format(tracker_name, values['auc']))
+        plt.plot(values['thresholds'], values['success_rates'], label = '{} [ {:.3f} ]'.format(tracker_name, values['auc']))
         plt.legend()
 
     return fig, filename

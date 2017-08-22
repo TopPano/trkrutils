@@ -1,6 +1,6 @@
 from trkrutils.consts import DEFAULT_ESTIMATED_COLOR, DEFAULT_GT_COLOR
 from trkrutils.core import Score, SpecialRegion
-from trkrutils.estimator import estimate_success_plot, estimate_ar_plot
+from trkrutils.estimator import estimate_success_plot, estimate_precision_plot, estimate_ar_plot
 
 DEFAULT_VISUALIZED = False
 DEFAULT_WAIT_PREIOD = 1
@@ -15,6 +15,7 @@ DEFAULT_REINITIALIZE_STEP = 10
 
 METRICS = [
     'success_plot',
+    'precision_plot',
     'ar_plot'
 ]
 
@@ -57,6 +58,7 @@ def _run_tracker(
 
     trajectory = []
     overlap_ratios = []
+    center_distances = []
     is_init = False
     rest_step = 0
 
@@ -66,6 +68,7 @@ def _run_tracker(
         img = frame.get_img(with_gt = False)
         gt = frame.get_gt()
         overlap_ratio = float('nan')
+        center_distance = float('nan')
 
         if not is_init:
             # (Re-)Initialize with the frame and ground truth
@@ -97,6 +100,7 @@ def _run_tracker(
                 # Assign the region to be the estimated region
                 region = estimated_region
                 overlap_ratio = _overlap_ratio
+                center_distance = gt.center_distance(estimated_region)
                 if visualized:
                     gt.draw(img, gt_color)
                     estimated_region.draw(img, estimated_color)
@@ -104,8 +108,9 @@ def _run_tracker(
 
         trajectory.append(region)
         overlap_ratios.append(overlap_ratio)
+        center_distances.append(center_distance)
 
-    return trajectory, overlap_ratios
+    return trajectory, overlap_ratios, center_distances
 
 def eval_video(
     trackers,
@@ -126,7 +131,7 @@ def eval_video(
     ]
 
     for metric in metrics:
-        if metric == 'success_plot':
+        if metric == 'success_plot' or metric == 'precision_plot':
             experiments[0].insert_metric(metric)
         elif metric == 'ar_plot':
             experiments[1].insert_metric(metric)
@@ -140,8 +145,9 @@ def eval_video(
                 reset = experiment.settings['reset']
                 trajectory_list = []
                 overlap_ratios_list = []
+                center_distances_list = []
                 for i in range(repetitions):
-                    trajectory, overlap_ratios = _run_tracker(
+                    trajectory, overlap_ratios, center_distances = _run_tracker(
                         tracker,
                         video,
                         reset = reset,
@@ -151,12 +157,15 @@ def eval_video(
                         wait_preiod = wait_preiod)
                     trajectory_list.append(trajectory)
                     overlap_ratios_list.append(overlap_ratios)
+                    center_distances_list.append(center_distances)
 
             # Insert result
             tracker_name = tracker.__class__.__name__
             for metric in experiment.metrics:
                 if metric == 'success_plot':
                     value = estimate_success_plot(overlap_ratios_list)
+                elif metric == 'precision_plot':
+                    value = estimate_precision_plot(center_distances_list)
                 elif metric == 'ar_plot':
                     value = estimate_ar_plot(overlap_ratios_list, trajectory_list)
                 score.insert(tracker_name, metric, value)
@@ -186,14 +195,16 @@ def eval_dataset(
             if metric == 'success_plot':
                 overlap_ratios_list = _reshape_list(scores, tracker_name, metric, 'overlap_ratios_list', repetitions)
                 value = estimate_success_plot(overlap_ratios_list)
-                overall_score.insert(tracker_name, metric, value)
+            elif metric == 'precision_plot':
+                center_distances_list = _reshape_list(scores, tracker_name, metric, 'center_distances_list', repetitions)
+                value = estimate_precision_plot(center_distances_list)
             elif metric == 'ar_plot':
                 overlap_ratios_list = _reshape_list(scores, tracker_name, metric, 'overlap_ratios_list', repetitions)
                 trajectory_list = _reshape_list(scores, tracker_name, metric, 'trajectory_list', repetitions)
                 value = estimate_ar_plot(overlap_ratios_list, trajectory_list)
-                overall_score.insert(tracker_name, metric, value)
             else:
                 raise ValueError('Metric "{}" is not supported'.format(metric))
+            overall_score.insert(tracker_name, metric, value)
 
     scores = [overall_score] + scores
 

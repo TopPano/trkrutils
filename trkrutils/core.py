@@ -1,5 +1,6 @@
 import abc
 import cv2
+import math
 from trkrutils.consts import DEFAULT_GT_COLOR
 
 DEFAULT_WITH_GT = True
@@ -18,18 +19,29 @@ class Tracker:
 
 class Region:
     @abc.abstractmethod
+    def center(self):
+        '''Compute the center of the region'''
+
+    @abc.abstractmethod
     def area(self):
-        '''Compute the area of the bounding box'''
+        '''Compute the area of the region'''
 
     @abc.abstractmethod
     def intersection(self, region):
         '''Compute the intersection area between
         this and another region'''
 
+    # Compute the center distance between this and another region
+    def center_distance(self, region):
+        center0 = self.center()
+        center1 = region.center()
+        return math.sqrt(math.pow(center0[0] - center1[0], 2) + math.pow(center0[1] - center1[1], 2))
+
     # Compute the union area with this and another region
     def union(self, region):
         return self.area() + region.area() - self.intersection(region)
 
+    # Compute the ratio of overlap between this and another region
     def overlap_ratio(self, region):
         intersection_area = float(self.intersection(region))
         union_area = float(self.union(region))
@@ -47,6 +59,10 @@ class SpecialRegion(Region):
     # Init function
     def __init__(self, code):
         self.code = code
+
+    # The center of special region is always (0, 0)
+    def center(self):
+        return (0, 0)
 
     # The area of special region is always 0
     def area(self):
@@ -79,6 +95,12 @@ class BoundingBox(Region):
     # Compute the height of the bounding box
     def height(self):
         return self.y2 - self.y1
+
+    # Compute the center of the bounding box
+    def center(self):
+        _x = (self.x1 + self.x2) / 2
+        _y = (self.y1 + self.y2) / 2
+        return (_x, _y)
 
     # Compute the area of the bounding box
     def area(self):

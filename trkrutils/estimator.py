@@ -4,6 +4,9 @@ from trkrutils.core import SpecialRegion
 
 DEFAULT_SENSITIVITY = 100
 
+DEFAULT_PRECISION_MAX_THRESHOLD = 50
+DEFAULT_PRECISION_SCORE_THRESHOLD = 20
+
 def _compute_per_frame_ratios(overlap_ratios_list):
     per_frame_ratios = []
 
@@ -57,6 +60,32 @@ def estimate_success_plot(overlap_ratios_list):
         'auc': auc,
         'per_frame_ratios': per_frame_ratios,
         'overlap_ratios_list': overlap_ratios_list
+    }
+
+def estimate_precision_plot(
+    center_distances_list,
+    max_threshold = DEFAULT_PRECISION_MAX_THRESHOLD,
+    score_threshold = DEFAULT_PRECISION_SCORE_THRESHOLD):
+    per_frame_distances = _compute_per_frame_ratios(center_distances_list)
+    thresholds = range(max_threshold + 1)
+    precisions = []
+
+    # Compute the precision for each threshold
+    for threshold in thresholds:
+        precision = float(len([d for d in per_frame_distances if d < threshold])) / len(per_frame_distances)
+        precisions.append(precision)
+
+    # Get the precision score, which is the precision under score_threshold
+    precision_score = precisions[score_threshold]
+
+    return {
+        'thresholds': thresholds,
+        'precisions': precisions,
+        'precision_score': precision_score,
+        'max_threshold': max_threshold,
+        'score_threshold': score_threshold,
+        'per_frame_distances': per_frame_distances,
+        'center_distances_list': center_distances_list
     }
 
 def estimate_accuracy(overlap_ratios_list):

@@ -64,6 +64,38 @@ def _success_plot(score):
 
     return fig, filename
 
+# Precision plot described in the paper of OTB
+def _precision_plot(score):
+    # Get the target target (video or dataset) name
+    target_name = score.target_name
+    # The filename for saving
+    filename = 'PrecisionPlot-{}.png'.format(target_name)
+    # The data for painting
+    result = score.results['precision_plot']
+    # Get the maximum threshold
+    # XXX:
+    # We assume at least one tracker result is in the score and all trackers are evaluated under same max threshold
+    max_threshold = result.itervalues().next()['max_threshold']
+
+    # Create a new plot figure
+    fig = plt.figure()
+
+    # Fill the fixed text
+    plt.ylabel('Precision')
+    plt.xlabel('Location error threshold')
+    plt.title('Precision plot of {}'.format(target_name))
+    plt.axis([0, max_threshold, 0, 1,])
+    plt.grid()
+
+    # Fill the score for each tracker
+    for tracker_name, values in result.iteritems():
+        plt.plot(values['thresholds'], values['precisions'], label = '{} [ {:.3f} ]'.format(tracker_name, values['precision_score']))
+
+    # Paint the legend
+    plt.legend()
+
+    return fig, filename
+
 def report(scores, show = DEFAULT_SHOW, save = DEFAULT_SAVE):
     data_list = []
 
@@ -73,6 +105,8 @@ def report(scores, show = DEFAULT_SHOW, save = DEFAULT_SAVE):
         for metric_name in score.get_metrics():
             if metric_name == 'success_plot':
                 fig, filename = _success_plot(score)
+            elif metric_name == 'precision_plot':
+                fig, filename = _precision_plot(score)
             elif metric_name == 'ar_plot':
                 fig, filename = _ar_plot(score)
             else:

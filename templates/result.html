@@ -59,6 +59,31 @@
           {{ data['html_plots'][0]|safe }}
         </div>
       {% endif %}
+
+      {% if not data['table'].empty %}
+        {% set value_names = data['table'].columns.values %}
+        <table id="table" class="table table-hover table-mc-light-blue">
+          <thead>
+            <tr>
+              <th>Tracker</th>
+              {% for value_name in value_names  %}
+                <th>{{ value_name }}</th>
+              {% endfor %}
+            </tr>
+          </thead>
+          <tbody>
+            {% for tracker_name, tracker_values in data['table'].iterrows() %}
+              <tr>
+                <td data-title="Tracker">{{ tracker_name }}</td>
+                {% for value_name in value_names  %}
+                  <td data-title="{{ value_name }}">{{ tracker_values[value_name] }}</td>
+                {% endfor %}
+              </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      {% endif %}
+
     </div>
   </body>
 </html>

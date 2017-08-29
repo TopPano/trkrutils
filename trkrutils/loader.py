@@ -37,6 +37,10 @@ class OTBVideo(Video):
 
         return frames
 
+    # Get length (# of frames) of the video
+    def length(self):
+        return len([name for name in os.listdir(os.path.join(self.path, 'img')) if name.endswith('jpg')])
+
 class VOTVideo(Video):
     # Init function
     def __init__(self, dataset_name, name, path):
@@ -75,6 +79,10 @@ class VOTVideo(Video):
             frames.append(frame)
 
         return frames
+
+    # Get length (# of frames) of the video
+    def length(self):
+        return len([name for name in os.listdir(self.path) if name.endswith('jpg')])
 
 def load(dataset_name, path = None, verbose = DEFAULT_DOWNLOAD_VERBOSE):
     assert dataset_name in DATASETS.keys(), 'Dataset "{}" is not supported'.format(dataset_name)

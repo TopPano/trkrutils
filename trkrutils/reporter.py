@@ -6,6 +6,7 @@ DEFAULT_SHOW = True
 DEFAULT_SAVE = False
 
 DEFAULT_TABLE_ORDER = [
+    'EAO',
     'ACC',
     'ROB',
     'AUC',
@@ -61,6 +62,38 @@ def _ar_plot(score):
     # out how to fix the bug.
     # mpld3 missing features: https://github.com/mpld3/mpld3/wiki#mpld3-missing-features
     plt.legend(loc = 'upper left')
+
+    return fig, table, filename
+
+# Expected Average Overlap (EAO) described in the paper of VOT (since VOT2015)
+def _eao(score):
+    # Get the target target (video or dataset) name
+    target_name = score.target_name
+    # The filename for saving
+    filename = 'EAOCurve-{}.png'.format(target_name)
+    # The data for painting
+    result = score.results['eao']
+    # Generate the table for this metric
+    table = _gen_table(result, 'eao_measure', 'EAO')
+    # The max sequence length
+    # XXX: We assume at least one tracker is measured and all trackers are measured under the same lengths
+    fragments_length = len(result.values()[0]['expected_average_overlaps'])
+
+    # Create a new plot figure
+    fig = plt.figure()
+
+    # Fill the fixed text
+    plt.xlabel('Sequence Length')
+    plt.ylabel('EAO')
+    plt.title('EAO curve of {}'.format(target_name))
+    plt.axis([0, fragments_length, 0, 1])
+    plt.grid()
+
+    # Fill the score for each tracker
+    for tracker_name, values in result.iteritems():
+        plt.plot(range(1, fragments_length + 1), values['expected_average_overlaps'], label = '{}'.format(tracker_name))
+
+    plt.legend()
 
     return fig, table, filename
 
@@ -140,6 +173,8 @@ def report(scores, show = DEFAULT_SHOW, save = DEFAULT_SAVE):
                 fig, _table, filename = _precision_plot(score)
             elif metric_name == 'ar_plot':
                 fig, _table, filename = _ar_plot(score)
+            elif metric_name == 'eao':
+                fig, _table, filename = _eao(score)
             else:
                 raise ValueError('Metric "{}" is not supported'.format(metric))
 
@@ -157,9 +192,13 @@ def report(scores, show = DEFAULT_SHOW, save = DEFAULT_SAVE):
 
         if show:
             # Reorder the table
-            table_order = [x for x in DEFAULT_TABLE_ORDER if x in table.columns.values]
-            table = table[table_order]
-            table = table.sort_values(table.columns[0], ascending = False)
+            if not table.empty:
+                table_order = [x for x in DEFAULT_TABLE_ORDER if x in table.columns.values]
+                table = table[table_order]
+                for column in table.columns:
+                    if not pd.isnull(table[column]).any():
+                        table = table.sort_values(column, ascending = False)
+                        break
             # Append the data for showing
             data_list.append({
                 'name': score.target_name,

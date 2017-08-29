@@ -145,6 +145,10 @@ class Video:
     def load_frames(self):
         return []
 
+    # Get length (# of frames) of the video
+    def length(self):
+        return 0
+
     # Show the video
     def show(self, with_gt = DEFAULT_WITH_GT, gt_color = DEFAULT_GT_COLOR, fps = DEFAULT_FPTS):
         # The period (in milliseconds) to show a frame

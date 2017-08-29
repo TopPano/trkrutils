@@ -1,11 +1,14 @@
 import math
 from trkrutils.utils import mean, merge_dict
 from trkrutils.core import SpecialRegion
+from trkrutils.eao import estimate_eao_interval
 
 DEFAULT_SENSITIVITY = 100
 
 DEFAULT_PRECISION_MAX_THRESHOLD = 50
 DEFAULT_PRECISION_SCORE_THRESHOLD = 20
+
+DEFAULT_EAO_INTERVAL_THRESHOLD = 0.5
 
 def _compute_per_frame_ratios(overlap_ratios_list):
     per_frame_ratios = []
@@ -123,3 +126,66 @@ def estimate_ar_plot(overlap_ratios_list, trajectory_list):
     robustness = estimate_robustness(trajectory_list)
 
     return merge_dict(accuracy, robustness)
+
+def estimate_eao(
+    videos_overlap_ratios_list,
+    videos_trajectory_list,
+    sequence_lengths,
+    threshold = DEFAULT_EAO_INTERVAL_THRESHOLD):
+    fragments_length = 0
+    fragments = []
+    expected_average_overlaps = []
+    eao_measure = None
+
+    for overlap_ratios_list, trajectory_list in zip(videos_overlap_ratios_list, videos_trajectory_list):
+        for overlap_ratios, trajectory in zip(overlap_ratios_list, trajectory_list):
+            # Update the fragments length if need
+            sequence_length = len(overlap_ratios)
+            fragments_length = sequence_length if sequence_length > fragments_length else fragments_length
+
+            # Extract fragment(s) from the sequence
+            fragment = []
+            in_sequence = True
+            for overlap_ratio, region in zip(overlap_ratios, trajectory):
+                if not isinstance(region, SpecialRegion):
+                    fragment.append(overlap_ratio)
+                else:
+                    if region.code == SpecialRegion.INIT:
+                        fragment = []
+                        in_sequence = True
+                    elif region.code == SpecialRegion.FAILURE:
+                        fragments.append((fragment, 'failure'))
+                        in_sequence = False
+            if in_sequence:
+                # The end is not failure, so status of this fragment is sucess
+                fragments.append((fragment, 'success'))
+
+    # Calculate expected average overlap (EAO) for different Ns
+    for Ns in range(1, fragments_length + 1):
+        if Ns == 1:
+            # EAO for Ns = 1 is always 1.0
+            expected_average_overlaps.append(1.0)
+        else:
+            usable_count = 0
+            expected_average_overlap = 0.0
+            for fragment, status in fragments:
+                if status == 'success' and len(fragment) < Ns - 1:
+                    # Fragment shorter than Ns that did not finish with failure is ignored.
+                    continue
+                expected_average_overlap += float(sum(fragment[0 : Ns - 1])) / (Ns - 1)
+                usable_count += 1
+            expected_average_overlap /= usable_count
+            expected_average_overlaps.append(expected_average_overlap)
+
+    # Calculate the EAO measure
+    if len(sequence_lengths) > 1:
+        peak, low, high = estimate_eao_interval(sequence_lengths, threshold)
+        eao_measure = mean(expected_average_overlaps[low - 1 : high])
+
+    return {
+        'expected_average_overlaps': expected_average_overlaps,
+        'eao_measure': eao_measure,
+        'videos_overlap_ratios_list': videos_overlap_ratios_list,
+        'videos_trajectory_list': videos_trajectory_list,
+        'sequence_lengths': sequence_lengths
+    }

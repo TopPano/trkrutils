@@ -76,7 +76,11 @@
               <tr>
                 <td data-title="Tracker">{{ tracker_name }}</td>
                 {% for value_name in value_names  %}
-                  <td data-title="{{ value_name }}">{{ tracker_values[value_name] }}</td>
+                  {% if tracker_values[value_name] is not none %}
+                    <td data-title="{{ value_name }}">{{ tracker_values[value_name] }}</td>
+                  {% else %}
+                    <td data-title="{{ value_name }}">-</td>
+                  {% endif %}
                 {% endfor %}
               </tr>
             {% endfor %}

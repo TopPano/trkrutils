@@ -1,6 +1,11 @@
 from trkrutils.consts import DEFAULT_ESTIMATED_COLOR, DEFAULT_GT_COLOR
 from trkrutils.core import Score, SpecialRegion
-from trkrutils.estimator import estimate_success_plot, estimate_precision_plot, estimate_ar_plot
+from trkrutils.estimator import (
+    estimate_success_plot,
+    estimate_precision_plot,
+    estimate_ar_plot,
+    estimate_eao
+)
 
 DEFAULT_VISUALIZED = False
 DEFAULT_WAIT_PREIOD = 1
@@ -11,12 +16,13 @@ DEFAULT_DETERMINISTIC_REPETITIONS = 1
 
 DEFAULT_RESET = True
 DEFAULT_FAILURE_THRESHOLD = 0.0
-DEFAULT_REINITIALIZE_STEP = 10
+DEFAULT_REINITIALIZE_STEP = 5
 
 METRICS = [
     'success_plot',
     'precision_plot',
-    'ar_plot'
+    'ar_plot',
+    'eao'
 ]
 
 class _Experiment:
@@ -39,6 +45,16 @@ def _reshape_list(scores, tracker_name, metric, value_name, repetitions):
             reshaped_list[idx].extend(value)
 
     return reshaped_list
+
+def _append_list(scores, tracker_name, metric, value_name):
+    appended_list = []
+
+    for score in scores:
+        value_list = score.get_val(tracker_name, metric)[value_name]
+        for idx, value in enumerate(value_list):
+            appended_list.append(value)
+
+    return appended_list
 
 def _run_tracker(
     tracker,
@@ -133,7 +149,7 @@ def eval_video(
     for metric in metrics:
         if metric == 'success_plot' or metric == 'precision_plot':
             experiments[0].insert_metric(metric)
-        elif metric == 'ar_plot':
+        elif metric == 'ar_plot' or metric == 'eao':
             experiments[1].insert_metric(metric)
         else:
             raise ValueError('Metric "{}" is not supported'.format(metric))
@@ -168,6 +184,8 @@ def eval_video(
                     value = estimate_precision_plot(center_distances_list)
                 elif metric == 'ar_plot':
                     value = estimate_ar_plot(overlap_ratios_list, trajectory_list)
+                elif metric == 'eao':
+                    value = estimate_eao([overlap_ratios_list], [trajectory_list], [video.length()])
                 score.insert(tracker_name, metric, value)
 
     return [score]
@@ -202,6 +220,11 @@ def eval_dataset(
                 overlap_ratios_list = _reshape_list(scores, tracker_name, metric, 'overlap_ratios_list', repetitions)
                 trajectory_list = _reshape_list(scores, tracker_name, metric, 'trajectory_list', repetitions)
                 value = estimate_ar_plot(overlap_ratios_list, trajectory_list)
+            elif metric == 'eao':
+                videos_overlap_ratios_list = _append_list(scores, tracker_name, metric, 'videos_overlap_ratios_list')
+                videos_trajectory_list = _append_list(scores, tracker_name, metric, 'videos_trajectory_list')
+                sequence_lengths = [score.get_val(tracker_name, metric)['sequence_lengths'][0] for score in scores]
+                value = estimate_eao(videos_overlap_ratios_list, videos_trajectory_list, sequence_lengths)
             else:
                 raise ValueError('Metric "{}" is not supported'.format(metric))
             overall_score.insert(tracker_name, metric, value)
